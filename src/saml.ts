@@ -50,7 +50,7 @@ async function processValidlySignedPostRequestAsync(
   self: SAML,
   doc: XMLOutput,
   dom: Document
-): Promise<{ profile?: Profile; loggedOut?: boolean }> {
+): Promise<{ profile: Profile; loggedOut: boolean }> {
   const request = doc.LogoutRequest;
   if (request) {
     const profile = {} as Profile;
@@ -66,8 +66,8 @@ async function processValidlySignedPostRequestAsync(
       throw new Error("Missing SAML issuer");
     }
     const nameID = await self._getNameIdAsync(self, dom);
-    if (nameID) {
-      profile.nameID = nameID.value!;
+    if (nameID?.value) {
+      profile.nameID = nameID.value;
       if (nameID.format) {
         profile.nameIDFormat = nameID.format;
       }
@@ -88,7 +88,7 @@ async function processValidlySignedSamlLogoutAsync(
   self: SAML,
   doc: XMLOutput,
   dom: Document
-): Promise<{ profile?: Profile | null; loggedOut?: boolean }> {
+): Promise<{ profile: Profile | null; loggedOut: boolean }> {
   const response = doc.LogoutResponse;
   const request = doc.LogoutRequest;
 
@@ -197,7 +197,7 @@ class SAML {
     }
   }
 
-  _generateUniqueID() {
+  _generateUniqueID(): string {
     return crypto.randomBytes(10).toString("hex");
   }
 
@@ -360,7 +360,7 @@ class SAML {
     return stringRequest;
   }
 
-  async _generateLogoutRequest(user: Profile) {
+  async _generateLogoutRequest(user: Profile): Promise<string> {
     const id = "_" + this._generateUniqueID();
     const instant = this.generateInstant();
 
@@ -402,9 +402,24 @@ class SAML {
     return buildXmlBuilderObject(request, false);
   }
 
-  _generateLogoutResponse(logoutRequest: Profile) {
+  _generateLogoutResponse(logoutRequest: Profile, success: boolean): string {
     const id = "_" + this._generateUniqueID();
     const instant = this.generateInstant();
+
+    const successStatus = {
+      "samlp:StatusCode": {
+        "@Value": "urn:oasis:names:tc:SAML:2.0:status:Success",
+      },
+    };
+
+    const failStatus = {
+      "samlp:StatusCode": {
+        "@Value": "urn:oasis:names:tc:SAML:2.0:status:Requester",
+        "samlp:StatusCode": {
+          "@Value": "urn:oasis:names:tc:SAML:2.0:status:UnknownPrincipal",
+        },
+      },
+    };
 
     const request = {
       "samlp:LogoutResponse": {
@@ -418,11 +433,7 @@ class SAML {
         "saml:Issuer": {
           "#text": this.options.issuer,
         },
-        "samlp:Status": {
-          "samlp:StatusCode": {
-            "@Value": "urn:oasis:names:tc:SAML:2.0:status:Success",
-          },
-        },
+        "samlp:Status": success ? successStatus : failStatus,
       },
     };
 
@@ -614,7 +625,7 @@ class SAML {
     user: Profile,
     RelayState: string,
     options: AuthenticateOptions & AuthorizeOptions
-  ) {
+  ): Promise<string> {
     const request = await this._generateLogoutRequest(user);
     const operation = "logout";
     const overrideParams = options ? options.additionalParams || {} : {};
@@ -630,18 +641,20 @@ class SAML {
     samlLogoutRequest: Profile,
     RelayState: string,
     options: AuthenticateOptions & AuthorizeOptions,
-    callback: (err: Error | null, url?: string | null) => void
+    success: boolean,
+    callback: (err: Error | null, url?: string) => void
   ): void {
-    util.callbackify(() => this.getLogoutResponseUrlAsync(samlLogoutRequest, RelayState, options))(
-      callback
-    );
+    util.callbackify(() =>
+      this.getLogoutResponseUrlAsync(samlLogoutRequest, RelayState, options, success)
+    )(callback);
   }
   private async getLogoutResponseUrlAsync(
     samlLogoutRequest: Profile,
     RelayState: string,
-    options: AuthenticateOptions & AuthorizeOptions // add RelayState,
+    options: AuthenticateOptions & AuthorizeOptions,
+    success: boolean
   ): Promise<string> {
-    const response = this._generateLogoutResponse(samlLogoutRequest);
+    const response = this._generateLogoutResponse(samlLogoutRequest, success);
     const operation = "logout";
     const overrideParams = options ? options.additionalParams || {} : {};
     return await this._requestToUrlAsync(
@@ -735,7 +748,7 @@ class SAML {
 
   async validatePostResponseAsync(
     container: Record<string, string>
-  ): Promise<{ profile?: Profile | null; loggedOut?: boolean }> {
+  ): Promise<{ profile: Profile | null; loggedOut: boolean }> {
     let xml: string, doc: Document, inResponseTo: string | null;
     try {
       xml = Buffer.from(container.SAMLResponse, "base64").toString("utf8");
@@ -882,7 +895,7 @@ class SAML {
       }
     } catch (err) {
       debug("validatePostResponse resulted in an error: %s", err);
-      if (this.options.validateInResponseTo) {
+      if (this.options.validateInResponseTo != null) {
         await this.cacheProvider.removeAsync(inResponseTo!);
       }
       throw err;
@@ -906,7 +919,7 @@ class SAML {
   async validateRedirectAsync(
     container: ParsedQs,
     originalQuery: string | null
-  ): Promise<{ profile?: Profile | null; loggedOut?: boolean }> {
+  ): Promise<{ profile: Profile | null; loggedOut: boolean }> {
     const samlMessageType = container.SAMLRequest ? "SAMLRequest" : "SAMLResponse";
 
     const data = Buffer.from(container[samlMessageType] as string, "base64");
@@ -1282,7 +1295,7 @@ class SAML {
 
   async validatePostRequestAsync(
     container: Record<string, string>
-  ): Promise<{ profile?: Profile; loggedOut?: boolean }> {
+  ): Promise<{ profile: Profile; loggedOut: boolean }> {
     const xml = Buffer.from(container.SAMLRequest, "base64").toString("utf8");
     const dom = parseDomFromString(xml);
     const doc = await parseXml2JsFromString(xml);
@@ -1336,7 +1349,10 @@ class SAML {
     throw new Error("Missing SAML NameID");
   }
 
-  generateServiceProviderMetadata(decryptionCert: string | null, signingCert?: string | null) {
+  generateServiceProviderMetadata(
+    decryptionCert: string | null,
+    signingCert?: string | null
+  ): string {
     const metadata: ServiceMetadataXML = {
       EntityDescriptor: {
         "@xmlns": "urn:oasis:names:tc:SAML:2.0:metadata",
@@ -1356,18 +1372,17 @@ class SAML {
         );
       }
     }
-    if (this.options.privateKey != null) {
-      if (!signingCert) {
-        throw new Error(
-          "Missing signingCert while generating metadata for signing service provider messages"
-        );
-      }
-    }
 
     if (this.options.decryptionPvk != null || this.options.privateKey != null) {
       metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor = [];
       if (this.options.privateKey != null) {
-        signingCert = signingCert!.replace(/-+BEGIN CERTIFICATE-+\r?\n?/, "");
+        if (typeof signingCert !== "string") {
+          throw new Error(
+            "Missing signingCert while generating metadata for signing service provider messages"
+          );
+        }
+
+        signingCert = signingCert.replace(/-+BEGIN CERTIFICATE-+\r?\n?/, "");
         signingCert = signingCert.replace(/-+END CERTIFICATE-+\r?\n?/, "");
         signingCert = signingCert.replace(/\r\n/g, "\n");
 

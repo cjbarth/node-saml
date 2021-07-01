@@ -54,6 +54,8 @@ describe("node-saml /", function () {
 
         const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
         const logoutRequestPromise = samlObj._generateLogoutRequest({
+          ID: "id",
+          issuer: "issuer",
           nameIDFormat: "foo",
           nameID: "bar",
         });
@@ -109,6 +111,8 @@ describe("node-saml /", function () {
 
         const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
         const logoutRequestPromise = samlObj._generateLogoutRequest({
+          ID: "id",
+          issuer: "issuer",
           nameIDFormat: "foo",
           nameID: "bar",
           nameQualifier: "Identity Provider",
@@ -136,7 +140,7 @@ describe("node-saml /", function () {
       }
     });
 
-    it("_generateLogoutResponse", function (done) {
+    it("_generateLogoutResponse success", function (done) {
       const expectedResponse = {
         "samlp:LogoutResponse": {
           $: {
@@ -158,7 +162,55 @@ describe("node-saml /", function () {
       };
 
       const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
-      const logoutRequest = samlObj._generateLogoutResponse({ ID: "quux" });
+      const logoutRequest = samlObj._generateLogoutResponse(
+        { ID: "quux", issuer: "issuer", nameID: "nameid", nameIDFormat: "nameidformat" },
+        true
+      );
+      parseString(logoutRequest, function (err, doc) {
+        try {
+          delete doc["samlp:LogoutResponse"]["$"]["ID"];
+          delete doc["samlp:LogoutResponse"]["$"]["IssueInstant"];
+          doc.should.eql(expectedResponse);
+          done();
+        } catch (err2) {
+          done(err2);
+        }
+      });
+    });
+
+    it("_generateLogoutResponse fail", function (done) {
+      const expectedResponse = {
+        "samlp:LogoutResponse": {
+          $: {
+            "xmlns:samlp": "urn:oasis:names:tc:SAML:2.0:protocol",
+            "xmlns:saml": "urn:oasis:names:tc:SAML:2.0:assertion",
+            //ID: '_d11b3c5e085b2417f4aa',
+            Version: "2.0",
+            //IssueInstant: '2014-05-29T01:11:32Z',
+            Destination: "foo",
+            InResponseTo: "quux",
+          },
+          "saml:Issuer": ["onelogin_saml"],
+          "samlp:Status": [
+            {
+              "samlp:StatusCode": [
+                {
+                  $: { Value: "urn:oasis:names:tc:SAML:2.0:status:Requester" },
+                  "samlp:StatusCode": [
+                    { $: { Value: "urn:oasis:names:tc:SAML:2.0:status:UnknownPrincipal" } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
+      const logoutRequest = samlObj._generateLogoutResponse(
+        { ID: "quux", issuer: "issuer", nameID: "nameid", nameIDFormat: "nameidformat" },
+        false
+      );
       parseString(logoutRequest, function (err, doc) {
         try {
           delete doc["samlp:LogoutResponse"]["$"]["ID"];
@@ -195,6 +247,8 @@ describe("node-saml /", function () {
 
         const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
         const logoutRequestPromise = samlObj._generateLogoutRequest({
+          ID: "id",
+          issuer: "issuer",
           nameIDFormat: "foo",
           nameID: "bar",
           sessionIndex: "session-id",
@@ -245,6 +299,8 @@ describe("node-saml /", function () {
       const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
       const cacheSaveSpy = sinon.spy(samlObj.cacheProvider, "saveAsync");
       const logoutRequestPromise = samlObj._generateLogoutRequest({
+        ID: "id",
+        issuer: "issuer",
         nameIDFormat: "foo",
         nameID: "bar",
         sessionIndex: "session-id",
