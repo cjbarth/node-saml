@@ -66,7 +66,7 @@ async function processValidlySignedPostRequestAsync(
       throw new Error("Missing SAML issuer");
     }
     const nameID = await self._getNameIdAsync(self, dom);
-    if (nameID?.value) {
+    if (nameID.value) {
       profile.nameID = nameID.value;
       if (nameID.format) {
         profile.nameIDFormat = nameID.format;
@@ -377,24 +377,24 @@ class SAML {
           "#text": this.options.issuer,
         },
         "saml:NameID": {
-          "@Format": user!.nameIDFormat,
-          "#text": user!.nameID,
+          "@Format": user.nameIDFormat,
+          "#text": user.nameID,
         },
       },
     } as LogoutRequestXML;
 
-    if (user!.nameQualifier != null) {
-      request["samlp:LogoutRequest"]["saml:NameID"]["@NameQualifier"] = user!.nameQualifier;
+    if (user.nameQualifier != null) {
+      request["samlp:LogoutRequest"]["saml:NameID"]["@NameQualifier"] = user.nameQualifier;
     }
 
-    if (user!.spNameQualifier != null) {
-      request["samlp:LogoutRequest"]["saml:NameID"]["@SPNameQualifier"] = user!.spNameQualifier;
+    if (user.spNameQualifier != null) {
+      request["samlp:LogoutRequest"]["saml:NameID"]["@SPNameQualifier"] = user.spNameQualifier;
     }
 
-    if (user!.sessionIndex) {
+    if (user.sessionIndex) {
       request["samlp:LogoutRequest"]["saml2p:SessionIndex"] = {
         "@xmlns:saml2p": "urn:oasis:names:tc:SAML:2.0:protocol",
-        "#text": user!.sessionIndex,
+        "#text": user.sessionIndex,
       };
     }
 
@@ -918,7 +918,7 @@ class SAML {
 
   async validateRedirectAsync(
     container: ParsedQs,
-    originalQuery: string | null
+    originalQuery: string
   ): Promise<{ profile: Profile | null; loggedOut: boolean }> {
     const samlMessageType = container.SAMLRequest ? "SAMLRequest" : "SAMLResponse";
 
@@ -936,9 +936,9 @@ class SAML {
 
   private async hasValidSignatureForRedirect(
     container: ParsedQs,
-    originalQuery: string | null
+    originalQuery: string
   ): Promise<boolean | void> {
-    const tokens = originalQuery!.split("&");
+    const tokens = originalQuery.split("&");
     const getParam = (key: string) => {
       const exists = tokens.filter((t) => {
         return new RegExp(key).test(t);
@@ -1365,14 +1365,6 @@ class SAML {
       },
     };
 
-    if (this.options.decryptionPvk != null) {
-      if (!decryptionCert) {
-        throw new Error(
-          "Missing decryptionCert while generating metadata for decrypting service provider"
-        );
-      }
-    }
-
     if (this.options.decryptionPvk != null || this.options.privateKey != null) {
       metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor = [];
       if (this.options.privateKey != null) {
@@ -1399,7 +1391,13 @@ class SAML {
       }
 
       if (this.options.decryptionPvk != null) {
-        decryptionCert = decryptionCert!.replace(/-+BEGIN CERTIFICATE-+\r?\n?/, "");
+        if (!decryptionCert) {
+          throw new Error(
+            "Missing decryptionCert while generating metadata for decrypting service provider"
+          );
+        }
+
+        decryptionCert = decryptionCert.replace(/-+BEGIN CERTIFICATE-+\r?\n?/, "");
         decryptionCert = decryptionCert.replace(/-+END CERTIFICATE-+\r?\n?/, "");
         decryptionCert = decryptionCert.replace(/\r\n/g, "\n");
 

@@ -2200,7 +2200,7 @@ describe("node-saml /", function () {
         const body = {
           SAMLRequest: "asdf",
         };
-        await assert.rejects(samlObj.validateRedirectAsync(body, null));
+        await assert.rejects(samlObj.validateRedirectAsync(body, ""));
       });
       it("errors if idpIssuer is set and wrong issuer", async function () {
         samlObj.options.idpIssuer = "foo";

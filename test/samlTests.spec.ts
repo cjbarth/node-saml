@@ -31,7 +31,7 @@ describe("SAML.js", function () {
         samlLogoutRequest: {
           ID: 123,
         },
-      } as RequestWithUser;
+      } as unknown as RequestWithUser;
       options = {
         additionalParams: {
           additionalKey: "additionalValue",
