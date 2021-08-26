@@ -103,91 +103,127 @@ describe("SAML.js", function () {
       it("calls callback with saml request object", async () => {
         req.user = assertRequired(req.user);
         const target = await saml.getLogoutUrlAsync(req.user, "", {});
-        should(url.parse(target!, true).query).have.property("SAMLRequest");
+        should(url.parse(target, true).query).have.property("SAMLRequest");
       });
     });
 
     describe("getLogoutResponseUrl", function () {
       it("calls callback with right host", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", {}, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target);
-            assert.strictEqual(parsed.host, "exampleidp.com");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          {},
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target);
+              assert.strictEqual(parsed.host, "exampleidp.com");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
       it("calls callback with right protocol", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", {}, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target);
-            assert.strictEqual(parsed.protocol, "https:");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          {},
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target);
+              assert.strictEqual(parsed.protocol, "https:");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
       it("calls callback with right path", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", {}, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target);
-            assert.strictEqual(parsed.pathname, "/path");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          {},
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target);
+              assert.strictEqual(parsed.pathname, "/path");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
       it("calls callback with original query string", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", {}, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target, true);
-            assert.strictEqual(parsed.query["key"], "value");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          {},
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target, true);
+              assert.strictEqual(parsed.query["key"], "value");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
       it("calls callback with additional run-time params in query string", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", options, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target, true);
-            assert.strictEqual(parsed.query["key"], "value");
-            should.exist(parsed.query["SAMLResponse"]);
-            assert.strictEqual(parsed.query["additionalKey"], "additionalValue");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          options,
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target, true);
+              assert.strictEqual(parsed.query["key"], "value");
+              should.exist(parsed.query["SAMLResponse"]);
+              assert.strictEqual(parsed.query["additionalKey"], "additionalValue");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
       // NOTE: This test only tests existence of the assertion, not the correctness
       it("calls callback with saml response object", function (done) {
-        saml.getLogoutResponseUrl(req.samlLogoutRequest, "", {}, true, function (err, target) {
-          should.not.exist(err);
-          try {
-            target = assertRequired(target);
-            const parsed = url.parse(target, true);
-            should(parsed.query).have.property("SAMLResponse");
-            done();
-          } catch (err2) {
-            done(err2);
+        saml.getLogoutResponseUrl(
+          req.samlLogoutRequest,
+          "",
+          {},
+          ["urn:oasis:names:tc:SAML:2.0:status:Success"],
+          function (err, target) {
+            should.not.exist(err);
+            try {
+              target = assertRequired(target);
+              const parsed = url.parse(target, true);
+              should(parsed.query).have.property("SAMLResponse");
+              done();
+            } catch (err2) {
+              done(err2);
+            }
           }
-        });
+        );
       });
     });
 

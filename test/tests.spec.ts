@@ -164,7 +164,7 @@ describe("node-saml /", function () {
       const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
       const logoutRequest = samlObj._generateLogoutResponse(
         { ID: "quux", issuer: "issuer", nameID: "nameid", nameIDFormat: "nameidformat" },
-        true
+        ["urn:oasis:names:tc:SAML:2.0:status:Success"]
       );
       parseString(logoutRequest, function (err, doc) {
         try {
@@ -209,7 +209,10 @@ describe("node-saml /", function () {
       const samlObj = new SAML({ entryPoint: "foo", cert: FAKE_CERT });
       const logoutRequest = samlObj._generateLogoutResponse(
         { ID: "quux", issuer: "issuer", nameID: "nameid", nameIDFormat: "nameidformat" },
-        false
+        [
+          "urn:oasis:names:tc:SAML:2.0:status:Requester",
+          "urn:oasis:names:tc:SAML:2.0:status:UnknownPrincipal",
+        ]
       );
       parseString(logoutRequest, function (err, doc) {
         try {

@@ -25,6 +25,8 @@ import {
   XMLInput,
   XMLObject,
   XMLOutput,
+  SamlStatusCode,
+  SamlSecondLevelStatusCode,
 } from "./types";
 import { AuthenticateOptions, AuthorizeOptions } from "./passport-saml-types";
 import { assertRequired } from "./utility";
@@ -402,24 +404,30 @@ class SAML {
     return buildXmlBuilderObject(request, false);
   }
 
-  _generateLogoutResponse(logoutRequest: Profile, success: boolean): string {
+  _generateLogoutResponse(logoutRequest: Profile, statusCode: SamlStatusCode): string {
     const id = "_" + this._generateUniqueID();
     const instant = this.generateInstant();
 
-    const successStatus = {
+    interface samlpStatus {
       "samlp:StatusCode": {
-        "@Value": "urn:oasis:names:tc:SAML:2.0:status:Success",
+        "@Value": string;
+        "samlp:StatusCode"?: {
+          "@Value": SamlSecondLevelStatusCode;
+        };
+      };
+    }
+
+    const status: samlpStatus = {
+      "samlp:StatusCode": {
+        "@Value": statusCode[0],
       },
     };
 
-    const failStatus = {
-      "samlp:StatusCode": {
-        "@Value": "urn:oasis:names:tc:SAML:2.0:status:Requester",
-        "samlp:StatusCode": {
-          "@Value": "urn:oasis:names:tc:SAML:2.0:status:UnknownPrincipal",
-        },
-      },
-    };
+    if (statusCode[1] != null) {
+      status["samlp:StatusCode"]["samlp:StatusCode"] = {
+        "@Value": statusCode[1],
+      };
+    }
 
     const request = {
       "samlp:LogoutResponse": {
@@ -433,7 +441,7 @@ class SAML {
         "saml:Issuer": {
           "#text": this.options.issuer,
         },
-        "samlp:Status": success ? successStatus : failStatus,
+        "samlp:Status": status,
       },
     };
 
@@ -641,7 +649,7 @@ class SAML {
     samlLogoutRequest: Profile,
     RelayState: string,
     options: AuthenticateOptions & AuthorizeOptions,
-    success: boolean,
+    success: SamlStatusCode,
     callback: (err: Error | null, url?: string) => void
   ): void {
     util.callbackify(() =>
@@ -652,7 +660,7 @@ class SAML {
     samlLogoutRequest: Profile,
     RelayState: string,
     options: AuthenticateOptions & AuthorizeOptions,
-    success: boolean
+    success: SamlStatusCode
   ): Promise<string> {
     const response = this._generateLogoutResponse(samlLogoutRequest, success);
     const operation = "logout";

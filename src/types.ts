@@ -29,6 +29,39 @@ export type XMLInput = XMLObject;
 
 export type XMLOutput = Record<string, any>;
 
+export type SamlStatusCode =
+  | [topLevelStatus: "urn:oasis:names:tc:SAML:2.0:status:Success"]
+  | [
+      topLevelStatus: "urn:oasis:names:tc:SAML:2.0:status:Requester",
+      secondLevelStatus: SamlSecondLevelStatusCode
+    ]
+  | [
+      topLevelStatus: "urn:oasis:names:tc:SAML:2.0:status:Responder",
+      secondLevelStatus: SamlSecondLevelStatusCode
+    ]
+  | [topLevelStatus: "urn:oasis:names:tc:SAML:2.0:status:VersionMismatch"];
+
+export type SamlSecondLevelStatusCode =
+  | "urn:oasis:names:tc:SAML:2.0:status:AuthnFailed"
+  | "urn:oasis:names:tc:SAML:2.0:status:InvalidAttrNameOrValue"
+  | "urn:oasis:names:tc:SAML:2.0:status:InvalidNameIDPolicy"
+  | "urn:oasis:names:tc:SAML:2.0:status:NoAuthnContext"
+  | "urn:oasis:names:tc:SAML:2.0:status:NoAvailableIDP"
+  | "urn:oasis:names:tc:SAML:2.0:status:NoPassive"
+  | "urn:oasis:names:tc:SAML:2.0:status:NoSupportedIDP"
+  | "urn:oasis:names:tc:SAML:2.0:status:PartialLogout"
+  | "urn:oasis:names:tc:SAML:2.0:status:ProxyCountExceeded"
+  | "urn:oasis:names:tc:SAML:2.0:status:RequestDenied"
+  | "urn:oasis:names:tc:SAML:2.0:status:RequestUnsupported"
+  | "urn:oasis:names:tc:SAML:2.0:status:RequestVersionDeprecated"
+  | "urn:oasis:names:tc:SAML:2.0:status:RequestVersionTooHigh"
+  | "urn:oasis:names:tc:SAML:2.0:status:RequestVersionTooLow"
+  | "urn:oasis:names:tc:SAML:2.0:status:ResourceNotRecognized"
+  | "urn:oasis:names:tc:SAML:2.0:status:TooManyResponses"
+  | "urn:oasis:names:tc:SAML:2.0:status:UnknownAttrProfile"
+  | "urn:oasis:names:tc:SAML:2.0:status:UnknownPrincipal"
+  | "urn:oasis:names:tc:SAML:2.0:status:UnsupportedBinding";
+
 export interface AuthorizeRequestXML {
   "samlp:AuthnRequest": XMLInput;
 }
