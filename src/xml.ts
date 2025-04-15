@@ -176,40 +176,41 @@ export const signXml = (
   sig.privateKey = options.privateKey;
   sig.publicCert = options.publicCert;
   sig.canonicalizationAlgorithm = "http://www.w3.org/2001/10/xml-exc-c14n#";
-  sig.computeSignature(xml, {
-    location,
-  });
+  sig.computeSignature(xml, { location });
 
   return sig.getSignedXml();
 };
 
-export const parseDomFromString = (xml: string): Promise<Document> => {
-  return new Promise(function (resolve, reject) {
-    function errHandler(msg: string) {
-      return reject(new Error(msg));
-    }
+export const parseDomFromString = (xml: string): Document => {
+  const errHandler: xmldom.ErrorHandlerFunction = function (level, msg) {
+    throw new Error(msg);
+  };
 
+  try {
     const dom = new xmldom.DOMParser({
-      /**
-       * locator is always need for error position info
-       */
-      locator: {},
       /**
        * you can override the errorHandler for xml parser
        * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
        */
-      errorHandler: {
-        error: errHandler,
-        fatalError: errHandler,
-      },
-    }).parseFromString(xml, "text/xml");
+      onError: errHandler,
+    }).parseFromString(xml, xmldom.MIME_TYPE.XML_TEXT);
 
     if (!Object.prototype.hasOwnProperty.call(dom, "documentElement")) {
-      return reject(new Error("Not a valid XML document"));
+      throw new Error("Not a valid XML document; missing documentElement");
     }
 
-    return resolve(dom);
-  });
+    if (dom == null) {
+      throw new Error("Not a valid XML document");
+    }
+
+    // This isn't strictly true, but it is good enough for our purposes (xpath)
+    return dom as unknown as Document;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw new Error(`Failed to parse XML: ${err.message}`);
+    }
+    throw err;
+  }
 };
 
 export const parseXml2JsFromString = async (xml: string | Buffer): Promise<XmlJsObject> => {
@@ -223,10 +224,7 @@ export const parseXml2JsFromString = async (xml: string | Buffer): Promise<XmlJs
 };
 
 export const buildXml2JsObject = (rootName: string, xml: XmlJsObject): string => {
-  const builderOpts = {
-    rootName,
-    headless: true,
-  };
+  const builderOpts = { rootName, headless: true };
   return new xml2js.Builder(builderOpts).buildObject(xml);
 };
 
@@ -237,10 +235,7 @@ export const buildXmlBuilderObject = (xml: XMLOutput, pretty: boolean): string =
 
 export const promiseWithNameId = async (nameid: Node): Promise<NameID> => {
   const format = xpath.selectAttributes(nameid, "@Format");
-  return {
-    value: nameid.textContent,
-    format: format && format[0] && format[0].nodeValue,
-  };
+  return { value: nameid.textContent, format: format && format[0] && format[0].nodeValue };
 };
 
 export const getNameIdAsync = async (
@@ -279,7 +274,7 @@ export const getNameIdAsync = async (
     const encryptedDataXml = encryptedData[0].toString();
 
     const decryptedXml = await decryptXml(encryptedDataXml, decryptionPvk);
-    const decryptedDoc = await parseDomFromString(decryptedXml);
+    const decryptedDoc = parseDomFromString(decryptedXml);
     const decryptedIds = xpath.selectElements(decryptedDoc, "/*[local-name()='NameID']");
     if (decryptedIds.length !== 1) {
       throw new Error("Invalid EncryptedData content");

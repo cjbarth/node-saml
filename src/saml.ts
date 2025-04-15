@@ -690,7 +690,7 @@ class SAML {
 
     try {
       xml = Buffer.from(container.SAMLResponse, "base64").toString("utf8");
-      doc = await parseDomFromString(xml);
+      doc = parseDomFromString(xml);
 
       const inResponseToNodes = xpath.selectAttributes(
         doc,
@@ -749,7 +749,7 @@ class SAML {
         const encryptedAssertionXml = encryptedAssertions[0].toString();
 
         const decryptedXml = await decryptXml(encryptedAssertionXml, this.options.decryptionPvk);
-        const decryptedDoc = await parseDomFromString(decryptedXml);
+        const decryptedDoc = parseDomFromString(decryptedXml);
         const decryptedAssertions = xpath.selectElements(
           decryptedDoc,
           "/*[local-name()='Assertion']",
@@ -1253,7 +1253,7 @@ class SAML {
     } = {},
   ): Promise<{ profile: Profile; loggedOut: boolean }> {
     const xml = Buffer.from(container.SAMLRequest, "base64").toString("utf8");
-    const dom = await _parseDomFromString(xml);
+    const dom = _parseDomFromString(xml);
     const doc = await _parseXml2JsFromString(xml);
     const pemFiles = await this.getKeyInfosAsPem();
     if (!_validateSignature(xml, dom.documentElement, pemFiles)) {

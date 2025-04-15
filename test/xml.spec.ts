@@ -148,8 +148,8 @@ describe("xml /", async function () {
       const good =
         '<saml2:Attribute Name="Email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified"><saml2:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">admin@mycompany.com</saml2:AttributeValue></saml2:Attribute>';
 
-      const evilCommentDoc = await parseDomFromString(evilComment);
-      const goodDoc = await parseDomFromString(good);
+      const evilCommentDoc = parseDomFromString(evilComment);
+      const goodDoc = parseDomFromString(good);
 
       assert(
         evilCommentDoc.documentElement.firstChild?.textContent ===

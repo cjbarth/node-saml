@@ -676,7 +676,7 @@ describe("node-saml /", function () {
 
         const metadata = samlObj.generateServiceProviderMetadata(null, publicCert);
 
-        const dom = await parseDomFromString(metadata);
+        const dom = parseDomFromString(metadata);
         expect(validateSignature(metadata, dom.documentElement, [publicCert])).to.be.true;
       });
 
@@ -743,7 +743,7 @@ describe("node-saml /", function () {
           issuer: "onesaml_login",
         });
         await assert.rejects(samlObj.validatePostResponseAsync({ SAMLResponse: "BOOM" }), {
-          message: "Not a valid XML document",
+          message: "Unicode replacement character detected, source encoding issues?",
         });
       });
       it("response with error status message should generate appropriate error", async () => {
@@ -2923,20 +2923,19 @@ describe("node-saml /", function () {
         SAMLRequest: "asdf",
       };
       await assert.rejects(samlObj.validatePostRequestAsync(body), {
-        message: "Not a valid XML document",
+        message: "Unicode replacement character detected, source encoding issues?",
       });
     });
 
-    it("errors if bad xml", async function () {
+    it("errors if bad xml", function () {
       const badXml =
         '<xml xmlns="a" xmlns:c="./lite">\n' +
         "\t<child>test</child>\n" +
         "\t<child22><<</child>\n" +
         "\t<child/>\n" +
         "</xml>";
-      await assert.rejects(parseDomFromString(badXml), {
-        message:
-          "[xmldom error]\telement parse error: Error: invalid tagName:<<\n" + "@#[line:3,col:11]",
+      assert.throws(() => parseDomFromString(badXml), {
+        message: "element parse error: Error: invalid tagName:<<",
       });
     });
 
