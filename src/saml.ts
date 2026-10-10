@@ -1168,6 +1168,9 @@ class SAML {
                 if (!validSignature) {
                   throw new Error("Invalid signature: NoPassive");
                 }
+                if (this.mustValidateInResponseTo(Boolean(verifiedInResponseTo))) {
+                  await consumeInResponseToAsync(this.cacheProvider, verifiedInResponseTo);
+                }
                 return { profile: null, loggedOut: false };
               }
             }
