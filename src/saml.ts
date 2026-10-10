@@ -1195,11 +1195,12 @@ class SAML {
         }
         throw new Error("Missing SAML assertion");
       } else {
-        if (!validSignature) {
+        if (!responseVerifiedXml) {
           throw new Error("Invalid signature: No response found");
         }
-        const logoutResponse = xmljsDoc.LogoutResponse;
-        if (logoutResponse) {
+        const verifiedDoc: XMLOutput = await parseXml2JsFromString(responseVerifiedXml);
+        if (verifiedDoc.LogoutResponse) {
+          await this.verifyLogoutResponse(verifiedDoc);
           if (this.mustValidateInResponseTo(Boolean(verifiedInResponseTo))) {
             await consumeInResponseToAsync(this.cacheProvider, verifiedInResponseTo);
           }
@@ -1414,7 +1415,7 @@ class SAML {
   }
 
   protected async verifyLogoutResponse(doc: XMLOutput): Promise<void> {
-    const statusCode = doc.LogoutResponse.Status[0].StatusCode[0].$.Value;
+    const statusCode = doc.LogoutResponse.Status?.[0]?.StatusCode?.[0]?.$?.Value;
     if (statusCode !== "urn:oasis:names:tc:SAML:2.0:status:Success")
       throw new Error("Bad status code: " + statusCode);
 

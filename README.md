@@ -181,7 +181,8 @@ logged; see [Troubleshooting](#troubleshooting).
 Two cases resolve without a `profile`:
 
 - The IdP returned a `LogoutResponse` rather than an authentication response:
-  `{ profile: null, loggedOut: true }`.
+  `{ profile: null, loggedOut: true }`. One whose status is not `Success`, or whose `Issuer` is not
+  `idpIssuer` when that is set, is rejected, as it is over the Redirect binding.
 - A `passive` request could not be satisfied without user interaction (a `NoPassive` status on a
   validly signed response): `{ profile: null, loggedOut: false }`.
 
