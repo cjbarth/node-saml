@@ -64,8 +64,7 @@ function resolveAuthOptions(
 ): AuthOptions | undefined {
   if (typeof hostOrOptions === "string" || legacyOptions !== undefined) {
     debugLog(
-      "%s was called with a `host` argument. It is unused and is removed in the next major version; call %s(RelayState, options) instead.",
-      methodName,
+      "%s was called with a `host` argument. It is unused and is removed in the next major version; pass (RelayState, options) instead.",
       methodName,
     );
     return legacyOptions;
@@ -823,7 +822,12 @@ class SAML {
     hostOrOptions?: string | AuthOptions,
     legacyOptions?: AuthOptions,
   ): Promise<querystring.ParsedUrlQueryInput> {
-    const options = resolveAuthOptions(hostOrOptions, legacyOptions, "getAuthorizeMessageAsync");
+    // `getAuthorizeFormAsync` forwards its arguments here, so this warning is its warning too.
+    const options = resolveAuthOptions(
+      hostOrOptions,
+      legacyOptions,
+      "getAuthorizeFormAsync or getAuthorizeMessageAsync",
+    );
     assertRequired(this.options.entryPoint, "entryPoint is required");
 
     const request = await this.generateAuthorizeRequestAsync(this.options.passive, true);
@@ -858,8 +862,6 @@ class SAML {
     hostOrOptions?: string | AuthOptions,
     legacyOptions?: AuthOptions,
   ): Promise<string> {
-    // Called for the warning; the arguments are forwarded below as they arrived.
-    resolveAuthOptions(hostOrOptions, legacyOptions, "getAuthorizeFormAsync");
     assertRequired(this.options.entryPoint, "entryPoint is required");
 
     // The quoteattr() function is used in a context, where the result will not be evaluated by javascript
