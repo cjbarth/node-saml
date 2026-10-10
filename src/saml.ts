@@ -1195,12 +1195,12 @@ class SAML {
         }
         throw new Error("Missing SAML assertion");
       } else {
-        if (!responseVerifiedXml) {
+        if (!validSignature) {
           throw new Error("Invalid signature: No response found");
         }
-        const verifiedDoc: XMLOutput = await parseXml2JsFromString(responseVerifiedXml);
-        if (verifiedDoc.LogoutResponse) {
-          await this.verifyLogoutResponse(verifiedDoc);
+        const logoutResponse = xmljsDoc.LogoutResponse;
+        if (logoutResponse) {
+          await this.verifyLogoutResponse(xmljsDoc);
           if (this.mustValidateInResponseTo(Boolean(verifiedInResponseTo))) {
             await consumeInResponseToAsync(this.cacheProvider, verifiedInResponseTo);
           }
