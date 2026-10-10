@@ -512,6 +512,19 @@ describe("InResponseTo request ID consumption", function () {
       );
     });
 
+    it("rejects an unsigned one over POST and leaves the request pending", async () => {
+      saml = newSaml({ wantAuthnResponseSigned: false });
+      await saml.getLogoutUrlAsync(user, "", {});
+      const unsigned = { SAMLResponse: Buffer.from(logoutResponseXml()).toString("base64") };
+
+      expect(await outcome(saml.validatePostResponseAsync(unsigned))).to.equal(
+        "Invalid signature: No response found",
+      );
+      expect(await outcome(saml.validatePostResponseAsync(signedPostLogoutResponse()))).to.equal(
+        "accepted",
+      );
+    });
+
     it("retires the request when a signed one answering it fails over POST", async () => {
       const failed = signedPostLogoutResponse(logoutResponseXml({ status: requesterError }));
 
